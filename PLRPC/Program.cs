@@ -11,6 +11,13 @@ namespace LBPUnion.PLRPC;
 
 public static class Program
 {
+    private static readonly JsonSerializerOptions lenientJsonOptions = new()
+    {
+        AllowTrailingCommas = true,
+        WriteIndented = true,
+        ReadCommentHandling = JsonCommentHandling.Skip
+    };
+
     public static async Task Main(string[] args)
     {
         #if !DEBUG
@@ -28,7 +35,7 @@ public static class Program
             if (configuration is
                 {
                     ServerUrl: not null,
-                    Username: not null,
+                    Username : not null,
                 })
                 await InitializeLighthouseClient(configuration.ServerUrl, configuration.Username);
         }
@@ -61,30 +68,33 @@ public static class Program
                 ServerUrl = "https://lighthouse.lbpunion.com",
                 Username = "",
             };
-            await File.WriteAllTextAsync("./config.json",
-                JsonSerializer.Serialize(defaultConfig,
-                    new JsonSerializerOptions
-                    {
-                        WriteIndented = true,
-                    }));
+            await File.WriteAllTextAsync("./config.json", JsonSerializer.Serialize(defaultConfig, lenientJsonOptions));
             return null;
         }
 
         string configurationJson = await File.ReadAllTextAsync("./config.json");
-        PlrpcConfiguration? configuration = JsonSerializer.Deserialize<PlrpcConfiguration>(configurationJson);
+        try
+        {
+            PlrpcConfiguration? configuration =
+                JsonSerializer.Deserialize<PlrpcConfiguration>(configurationJson, lenientJsonOptions);
 
-        if (configuration is
-            {
-                ServerUrl: not null,
-                Username: not null,
-            })
-            return new PlrpcConfiguration
-            {
-                ServerUrl = configuration.ServerUrl,
-                Username = configuration.Username,
-            };
-        Logger.Error("Configuration is invalid. Delete config.json and restart the program.");
-        return null;
+            if (configuration is {
+                    ServerUrl: not null,
+                    Username: not null,
+                })
+                return new PlrpcConfiguration
+                {
+                    ServerUrl = configuration.ServerUrl,
+                    Username = configuration.Username,
+                };
+            Logger.Error("Configuration is invalid. Delete config.json and restart the program.");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Could not read configuration file. Make sure that the config.json file is valid. {ex.GetType().Name}: {ex.Message}");
+            return null;
+        }
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
