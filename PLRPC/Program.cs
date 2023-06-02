@@ -50,26 +50,6 @@ public static class Program
         }
     }
 
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static async Task InitializeUpdateCheck()
-    {
-        HttpClient updateClient = new();
-        updateClient.DefaultRequestHeaders.UserAgent.ParseAdd("LBPUnion/1.0 (PLRPC; github-release) UpdateClient/1.1");
-        Updater updater = new(updateClient);
-        Release? updateResult = await updater.CheckForUpdate();
-        if (updateResult != null)
-        {
-            Logger.Notice("***************************************");
-            Logger.Notice("A new version of PLRPC is available!");
-            Logger.Notice($"{updateResult.TagName}: {updateResult.Url}");
-            Logger.Notice("***************************************");
-        }
-        else
-        {
-            Logger.Notice("There are no new updates available.");
-        }
-    }
-
     private static async Task<PlrpcConfiguration?> LoadFromConfiguration()
     {
         if (!File.Exists("./config.json"))
@@ -105,6 +85,26 @@ public static class Program
             };
         Logger.Error("Configuration is invalid. Delete config.json and restart the program.");
         return null;
+    }
+
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static async Task InitializeUpdateCheck()
+    {
+        HttpClient updateClient = new();
+        updateClient.DefaultRequestHeaders.UserAgent.ParseAdd("LBPUnion/1.0 (PLRPC; github-release) UpdateClient/1.1");
+        Updater updater = new(updateClient);
+        Release? updateResult = await updater.CheckForUpdate();
+        if (updateResult != null)
+        {
+            Logger.Notice("***************************************");
+            Logger.Notice("A new version of PLRPC is available!");
+            Logger.Notice($"{updateResult.TagName}: {updateResult.Url}");
+            Logger.Notice("***************************************");
+        }
+        else
+        {
+            Logger.Notice("There are no new updates available.");
+        }
     }
 
     private static async Task InitializeLighthouseClient(string serverUrl, string username)
